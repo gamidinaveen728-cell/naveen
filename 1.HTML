@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Expense Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .expense-item {
+            transition: background-color 0.2s ease;
+        }
+        
+        .expense-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .category-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="py-8">
+    <div class="max-w-6xl mx-auto px-4">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4 flex items-center justify-center">
+                <i class="fas fa-graduation-cap mr-3 text-indigo-600"></i>
+                Student Expense Tracker
+            </h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Track your college expenses, manage your budget, and stay on top of your finances throughout the semester.
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Input Form -->
+            <div class="lg:col-span-1 bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
+                    <i class="fas fa-plus-circle mr-2 text-indigo-600"></i>
+                    Add New Expense
+                </h2>
+                <form id="expense-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Expense Title</label>
+                        <input
+                            type="text"
+                            id="expense-title"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="e.g., Engineering Textbook"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Amount (₹)</label>
+                        <input
+                            type="number"
+                            id="expense-amount"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="0.00"
+                            min="0"
+                            step="0.01"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <select
+                            id="expense-category"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="food">Food & Dining</option>
+                            <option value="transport">Transportation</option>
+                            <option value="books">Books & Study Material</option>
+                            <option value="academic">Academic Expenses</option>
+                            <option value="social">Social Activities</option>
+                            <option value="misc">Miscellaneous</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input
+                            type="date"
+                            id="expense-date"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition duration-200 flex items-center justify-center"
+                    >
+                        <i class="fas fa-save mr-2"></i>
+                        Add Expense
+                    </button>
+                </form>
+
+                <!-- Budget Overview -->
+                <div class="mt-8">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                        <i class="fas fa-wallet mr-2 text-indigo-600"></i>
+                        Monthly Budget
+                    </h3>
+                    <div class="space-y-3" id="budget-container">
+                        <!-- Budget items will be added here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Column - Expense List -->
+            <div class="lg:col-span-1 bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-receipt mr-2 text-indigo-600"></i>
+                        Recent Expenses
+                    </h2>
+                    <span class="text-lg font-bold text-indigo-600" id="total-expenses">
+                        Total: ₹0
+                    </span>
+                </div>
+
+                <div class="mb-4 flex space-x-2">
+                    <button class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-md text-sm font-medium active-filter" data-filter="all">
+                        All
+                    </button>
+                    <button class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-md text-sm font-medium" data-filter="food">
+                        Food
+                    </button>
+                    <button class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-md text-sm font-medium" data-filter="books">
+                        Books
+                    </button>
+                    <button class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-md text-sm font-medium" data-filter="transport">
+                        Transport
+                    </button>
+                </div>
+
+                <div class="space-y-4" id="expenses-list">
+                    <!-- Expense items will be added here -->
+                </div>
+            </div>
+
+            <!-- Right Column - Charts -->
+            <div class="lg:col-span-1 bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-800 flex items-center">
+                    <i class="fas fa-chart-pie mr-2 text-indigo-600"></i>
+                    Spending Overview
+                </h2>
+                
+                <!-- Pie Chart -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-4 text-gray-700">Expense Distribution</h3>
+                    <div id="pie-chart" class="h-64"></div>
+                </div>
+
+                <!-- Bar Chart -->
+                <div>
+                    <h3 class="text-lg font-medium mb-4 text-gray-700">Monthly Spending</h3>
+                    <div id="bar-chart" class="h-64"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-lg shadow-lg p-6 text-center card">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">This Month</h3>
+                <p class="text-3xl font-bold text-indigo-600" id="month-expenses">
+                    ₹0
+                </p>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg p-6 text-center card">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Most Spent On</h3>
+                <p class="text-2xl font-bold text-green-600 capitalize" id="most-spent">
+                    -
+                </p>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg p-6 text-center card">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Daily Average</h3>
+                <p class="text-3xl font-bold text-purple-600" id="daily-average">
+                    ₹0
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for the expense tracker
+        let expenses = [
+            { id: 1, title: 'Textbooks', amount: 1200, category: 'books', date: '2023-10-15' },
+            { id: 2, title: 'Cafeteria Lunch', amount: 80, category: 'food', date: '2023-10-16' },
+            { id: 3, title: 'Bus Pass', amount: 500, category: 'transport', date: '2023-10-01' },
+            { id: 4, title: 'Lab Equipment', amount: 350, category: 'academic', date: '2023-10-10' },
+            { id: 5, title: 'Coffee with Friends', amount: 150, category: 'social', date: '2023-10-12' },
+        ];
+
+        const categories = [
+            { name: 'food', color: '#FF6B6B', budget: 2000, icon: 'fa-utensils' },
+            { name: 'transport', color: '#4ECDC4', budget: 1000, icon: 'fa-bus' },
+            { name: 'books', color: '#45B7D1', budget: 3000, icon: 'fa-book' },
+            { name: 'academic', color: '#96CEB4', budget: 1500, icon: 'fa-flask' },
+            { name: 'social', color: '#FFEAA7', budget: 1000, icon: 'fa-users' },
+            { name: 'misc', color: '#DDA0DD', budget: 500, icon: 'fa-shapes' },
+        ];
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date as default for the date input
+            document.getElementById('expense-date').valueAsDate = new Date();
+            
+            // Render initial data
+            renderExpenses();
+            renderBudgetOverview();
+            updateCharts();
+            updateQuickStats();
+            
+            // Add event listeners
+            document.getElementById('expense-form').addEventListener('submit', handleAddExpense);
+            
+            // Add filter event listeners
+            document.querySelectorAll('[data-filter]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const filter = this.getAttribute('data-filter');
+                    
+                    // Update active filter button
+                    document.querySelectorAll('[data-filter]').forEach(btn => {
+                        btn.classList.remove('active-filter', 'bg-indigo-600', 'text-white');
+                        btn.classList.add('bg-indigo-100', 'text-indigo-700');
+                    });
+                    this.classList.remove('bg-indigo-100', 'text-indigo-700');
+                    this.classList.add('active-filter', 'bg-indigo-600', 'text-white');
+                    
+                    renderExpenses(filter);
+                });
+            });
+        });
+
+        // Handle adding a new expense
+        function handleAddExpense(e) {
+            e.preventDefault();
+            
+            const titleInput = document.getElementById('expense-title');
+            const amountInput = document.getElementById('expense-amount');
+            const categoryInput = document.getElementById('expense-category');
+            const dateInput = document.getElementById('expense-date');
+            
+            if (!titleInput.value || !amountInput.value) return;
+            
+            const newExpense = {
+                id: Date.now(),
+                title: titleInput.value,
+                amount: parseFloat(amountInput.value),
+                category: categoryInput.value,
+                date: dateInput.value
+            };
+            
+            expenses.push(newExpense);
+            
+            // Reset form
+            titleInput.value = '';
+            amountInput.value = '';
+            categoryInput.value = 'food';
+            dateInput.valueAsDate = new Date();
+            
+            // Update UI
+            renderExpenses();
+            renderBudgetOverview();
+            updateCharts();
+            updateQuickStats();
+        }
+
+        // Render expenses list
+        function renderExpenses(filter = 'all') {
+            const expensesList = document.getElementById('expenses-list');
+            const totalExpensesElement = document.getElementById('total-expenses');
+            
+            // Filter expenses if needed
+            const filteredExpenses = filter === 'all' 
+                ? expenses 
+                : expenses.filter(exp => exp.category === filter);
+            
+            // Calculate total
+            const total = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+            totalExpensesElement.textContent = `Total: ₹${total}`;
+            
+            // Clear the list
+            expensesList.innerHTML = '';
+            
+            // Add expenses to the list
+            if (filteredExpenses.length === 0) {
+                expensesList.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-receipt text-4xl mb-2"></i>
+                        <p>No expenses found</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            filteredExpenses.forEach(expense => {
+                const category = categories.find(c => c.name === expense.category);
+                const expenseElement = document.createElement('div');
+                expenseElement.className = 'expense-item flex justify-between items-center p-4 border border-gray-200 rounded-lg';
+                expenseElement.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-3 h-3 rounded-full" style="background-color: ${category.color}"></div>
+                        <div>
+                            <h4 class="font-medium text-gray-800">${expense.title}</h4>
+                            <p class="text-sm text-gray-500 capitalize">${expense.category} • ${formatDate(expense.date)}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-semibold text-red-600">₹${expense.amount}</span>
+                        <button class="text-gray-400 hover:text-red-500 delete-btn" data-id="${expense.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                expensesList.appendChild(expenseElement);
+            });
+            
+            // Add event listeners to delete buttons
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    expenses = expenses.filter(exp => exp.id !== id);
+                    renderExpenses(filter);
+                    renderBudgetOverview();
+                    updateCharts();
+                    updateQuickStats();
+                });
+            });
+        }
+
+        // Render budget overview
+        function renderBudgetOverview() {
+            const budgetContainer = document.getElementById('budget-container');
+            budgetContainer.innerHTML = '';
+            
+            categories.forEach(category => {
+                const spent = expenses
+                    .filter(exp => exp.category === category.name)
+                    .reduce((sum, exp) => sum + exp.amount, 0);
+                
+                const remaining = Math.max(0, category.budget - spent);
+                const percentage = Math.min(100, (spent / category.budget) * 100);
+                
+                const budgetItem = document.createElement('div');
+                budgetItem.className = 'flex justify-between items-center';
+                budgetItem.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas ${category.icon} mr-2" style="color: ${category.color}"></i>
+                        <span class="text-sm font-medium capitalize">${category.name}</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-600">₹${remaining} left</span>
+                        <div class="w-20 bg-gray-200 rounded-full h-2">
+                            <div class="h-2 rounded-full" style="width: ${percentage}%; background-color: ${category.color}"></div>
+                        </div>
+                    </div>
+                `;
+                budgetContainer.appendChild(budgetItem);
+            });
+        }
+
+        // Update charts
+        function updateCharts() {
+            // Prepare data for charts
+            const categoryTotals = categories.map(category => ({
+                name: category.name,
+                value: expenses
+                    .filter(exp => exp.category === category.name)
+                    .reduce((sum, exp) => sum + exp.amount, 0),
+                color: category.color
+            }));
+            
+            // Filter out categories with no expenses
+            const filteredCategoryTotals = categoryTotals.filter(item => item.value > 0);
+            
+            // Monthly data (for demonstration)
+            const monthlyData = [
+                { month: 'Sep', expenses: 4200 },
+                { month: 'Oct', expenses: expenses.reduce((sum, exp) => sum + exp.amount, 0) },
+                { month: 'Nov', expenses: 0 },
+            ];
+            
+            // Update pie chart
+            const pieOptions = {
+                series: filteredCategoryTotals.map(item => item.value),
+                chart: {
+                    type: 'pie',
+                    height: '100%'
+                },
+                labels: filteredCategoryTotals.map(item => item.name.charAt(0).toUpperCase() + item.name.slice(1)),
+                colors: filteredCategoryTotals.map(item => item.color),
+                legend: {
+                    position: 'bottom'
+                },
+                responsive: [{
+                    breakpoint: 480,
+                    options: {
+                        chart: {
+                            width: 200
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }]
+            };
+            
+            const pieChart = new ApexCharts(document.querySelector("#pie-chart"), pieOptions);
+            pieChart.render();
+            
+            // Update bar chart
+            const barOptions = {
+                series: [{
+                    name: 'Expenses',
+                    data: monthlyData.map(item => item.expenses)
+                }],
+                chart: {
+                    type: 'bar',
+                    height: '100%'
+                },
+                plotOptions: {
+                    bar: {
+                        borderRadius: 4,
+                        horizontal: false,
+                    }
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                xaxis: {
+                    categories: monthlyData.map(item => item.month),
+                },
+                colors: ['#4361ee']
+            };
+            
+            const barChart = new ApexCharts(document.querySelector("#bar-chart"), barOptions);
+            barChart.render();
+        }
+
+        // Update quick stats
+        function updateQuickStats() {
+            // This month's expenses
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            
+            const monthExpenses = expenses
+                .filter(exp => {
+                    const expDate = new Date(exp.date);
+                    return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;
+                })
+                .reduce((sum, exp) => sum + exp.amount, 0);
+            
+            document.getElementById('month-expenses').textContent = `₹${monthExpenses}`;
+            
+            // Most spent category
+            const categoryTotals = categories.map(category => ({
+                name: category.name,
+                total: expenses
+                    .filter(exp => exp.category === category.name)
+                    .reduce((sum, exp) => sum + exp.amount, 0)
+            }));
+            
+            const mostSpent = categoryTotals.reduce((max, category) => 
+                category.total > max.total ? category : max, {name: '-', total: 0}
+            );
+            
+            document.getElementById('most-spent').textContent = mostSpent.name;
+            
+            // Daily average
+            const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const dailyAverage = total / 30; // Approximation
+            document.getElementById('daily-average').textContent = `₹${Math.round(dailyAverage)}`;
+        }
+
+        // Format date to readable string
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-US', options);
+        }
+    </script>
+</body>
+</html>
+
+
+                       
